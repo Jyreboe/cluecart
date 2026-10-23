@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS shop_connections(shop text PRIMARY KEY,org_id uuid UNIQUE NOT NULL REFERENCES organizations ON DELETE CASCADE,encrypted_tokens text,scopes text NOT NULL,revoked boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS shop_oauth_states(state_hash text PRIMARY KEY,org_id uuid NOT NULL REFERENCES organizations ON DELETE CASCADE,user_id uuid NOT NULL REFERENCES users ON DELETE CASCADE,shop text NOT NULL,write_access boolean NOT NULL,expires_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS publications(id uuid PRIMARY KEY,org_id uuid NOT NULL,product_id uuid NOT NULL,approval_id uuid NOT NULL REFERENCES approvals ON DELETE CASCADE,shop text NOT NULL,remote_id text NOT NULL,status text NOT NULL,snapshot jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),FOREIGN KEY(product_id,org_id) REFERENCES products(id,org_id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS shop_webhook_receipts(id text PRIMARY KEY,shop text NOT NULL,topic text NOT NULL,received_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS privacy_tasks(id uuid PRIMARY KEY,org_id uuid NOT NULL REFERENCES organizations ON DELETE CASCADE,shop text NOT NULL,topic text NOT NULL,request_ref text NOT NULL,status text NOT NULL DEFAULT 'needs_review',created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS publication_product ON publications(org_id,product_id,created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS imported_shopify_product ON products(org_id,(data->'shopify'->>'id')) WHERE data->'shopify'->>'id' IS NOT NULL;
+ALTER TABLE privacy_tasks ADD COLUMN IF NOT EXISTS encrypted_payload text;
